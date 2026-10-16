@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Faktor Sepunya: Lompat & Kutip!</title>
+<style>
+:root{--navy:#16345a;--gold:#ffd43b;--sky:#77d9ff;--green:#54c957;--crystal:#16a34a}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:linear-gradient(#5ccafa,#d8f7ff);color:#17304e}
+.wrap{max-width:1100px;margin:auto;padding:14px}.header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#16345a;color:white;border:4px solid #0d2340;border-radius:18px;padding:12px 18px;box-shadow:0 5px #09192d}
+h1{margin:0;color:#ffdc47;font-size:clamp(22px,4vw,36px);text-shadow:2px 3px #a65313}.subtitle{font-size:13px;color:#d7efff}
+.stats{display:flex;gap:8px;flex-wrap:wrap}.pill{background:#fff2c5;color:#172e4d;padding:8px 12px;border-radius:12px;font-weight:900;border:2px solid #e7b737}
+.quest{background:#fff7d9;border:3px solid #aa6b2e;border-radius:15px;padding:12px;margin:14px 0;text-align:center;font-weight:800;font-size:clamp(16px,2.5vw,22px);box-shadow:0 4px #74421d}
+.quest small{display:block;font-size:13px;color:#536276;margin-top:4px}
+.gamebox{border:5px solid #74421d;border-radius:18px;overflow:hidden;box-shadow:0 6px #422b19;background:#78d9ff}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated;touch-action:pan-y}
+.controls{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}
+.group{display:flex;gap:8px}.btn{border:0;border-radius:12px;padding:12px 18px;background:linear-gradient(#ffe36a,#ffbd26);color:#3c2a06;font-weight:950;box-shadow:0 4px #a55e12;cursor:pointer;font-size:16px}.btn:active{transform:translateY(3px);box-shadow:0 1px #a55e12}.btn.dark{background:linear-gradient(#284b73,#16345a);color:white;box-shadow:0 4px #0b2039}.btn:disabled{opacity:.45;cursor:not-allowed}
+.hint{background:#fff;border:2px solid #c6e8f5;border-radius:14px;padding:12px;line-height:1.55}.legend{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:8px 0;font-weight:900}.legend span{padding:6px 10px;border-radius:9px;color:#fff}.legend .good{background:#16843b;border:2px solid #075e26}.legend .bad{background:#c62828;border:2px solid #8e1111}.feedback{min-height:28px;font-weight:850;text-align:center;margin:10px 0}.gameover{position:fixed;inset:0;background:rgba(8,25,43,.72);display:none;place-items:center;z-index:20;padding:20px}.gameover.show{display:grid}.gameover-card{width:min(430px,92vw);background:#fff7d9;border:5px solid #74421d;border-radius:22px;box-shadow:0 8px #422b19;padding:28px;text-align:center}.gameover-card h2{margin:0 0 8px;font-size:42px;color:#c62828}.victory-card h2{color:#16843b}.gameover-card p{font-weight:800;margin:8px 0 18px}.gameover-card .btn{min-width:180px}
+@media(max-width:600px){.wrap{padding:8px}.header{padding:12px}.btn{padding:12px 14px}.quest{margin:10px 0}.stats{width:100%}}
+</style></head>
+<body><main class="wrap">
+<header class="header"><div><h1>FAKTOR SEPUNYA</h1><div class="subtitle">Lompat, elak perangkap & kutip kristal nombor!</div></div><div class="stats"><div class="pill">⭐ Skor: <span id="score">0</span></div><div class="pill">❤️ Nyawa: <span id="lives">3</span></div><div class="pill">🏁 Misi: <span id="level">1/10</span></div></div></header>
+<div class="quest" id="question">Cari faktor sepunya bagi 12 dan 18.<small id="hintline">Semua kristal nombor mempunyai warna yang sama. Baca nombor dan tentukan sendiri faktor sepunya—lompat atau bergerak untuk memilih.</small></div>
+<div class="legend"><span style="background:#16a34a;border:2px solid #d9ffd9">SEMUA KRISTAL WARNA SAMA — BACA NOMBOR!</span></div><div class="gamebox"><canvas id="game" width="960" height="440" aria-label="Permainan platform faktor sepunya"></canvas></div>
+<div class="controls"><div class="group"><button class="btn dark" id="left">⬅ Kiri</button><button class="btn dark" id="right">Kanan ➡</button><button class="btn" id="jump">⬆ Lompat</button></div><div class="group"><button class="btn" id="start">▶ Mula</button><button class="btn" id="next" disabled>Misi seterusnya ➜</button><button class="btn" id="reset">↻ Reset</button></div></div>
+<div class="gameover" id="gameover"><div class="gameover-card"><h2>GAME OVER,</h2><p>NYAWA ANDA TELAH HABIS, SILA CUBA SEMULA!</p><p>SKOR AKHIR: <strong id="finalScore">0</strong></p><button class="btn" id="restartGame">↻ RESTART</button></div></div>
+<div class="gameover" id="victory"><div class="gameover-card victory-card"><h2>TAHNIAH,</h2><p id="victoryMessage">ANDA BERJAYA MENAMATKAN SEMUA 10 MISI FAKTOR SEPUNYA!</p><p>SKOR AKHIR: <strong id="victoryScore">0</strong></p><div style="font-size:48px;margin:8px 0">🏆🎉⭐</div><button class="btn" id="restartWin">↻ MAIN SEMULA</button></div></div><div class="feedback" id="feedback">Tekan Mula. Guna butang atau kekunci anak panah; Space untuk lompat.</div>
+<div class="hint"><b>🎮 Cara main:</b> Bergerak macam game platform klasik. Semua kristal nombor menggunakan warna dan bentuk yang sama—tiada warna khas untuk jawapan betul atau salah. Baca nombor pada kristal dan gunakan pengetahuan faktor sepunya untuk memilih. Kristal dijarakkan supaya pemain boleh bergerak atau melompat. Kumpulkan semua faktor sepunya untuk membuka pintu ke misi seterusnya.<br><b>Kawalan komputer:</b> ← → untuk bergerak, Space/↑ untuk lompat. <b>Telefon:</b> guna butang pada skrin.</div>
+</main>
+<script>
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const rounds=[[12,18],[8,20],[15,25],[14,21],[16,24],[9,27],[18,30],[20,32],[24,36],[28,42]];
+let idx=0,score=0,lives=3,running=false,complete=false,gameOver=false,keys={},items=[],got=new Set(),player={x:55,y:300,w:30,h:38,vx:0,vy:0,onGround:false},camera=0,worldW=1600,door={x:1490,y:320,w:48,h:65};
+const platforms=[{x:0,y:390,w:260,h:50},{x:310,y:340,w:150,h:22},{x:500,y:290,w:150,h:22},{x:690,y:345,w:155,h:22},{x:890,y:285,w:150,h:22},{x:1080,y:340,w:150,h:22},{x:1260,y:390,w:340,h:50},{x:180,y:270,w:95,h:20},{x:790,y:220,w:100,h:20},{x:1110,y:235,w:95,h:20}];
+function factors(n){let a=[];for(let i=1;i<=n;i++)if(n%i===0)a.push(i);return a}
+function common(a,b){return factors(a).filter(n=>b%n===0)}
+function text(id,t){document.getElementById(id).textContent=t}
+function say(t){text('feedback',t)}
+function setup(){
+ const [a,b]=rounds[idx],good=common(a,b),fa=factors(a),fb=factors(b);
+ document.getElementById('question').firstChild.textContent=`Cari faktor sepunya bagi ${a} dan ${b}.`;
+ text('hintline',`Faktor ${a}: ${fa.join(', ')}  |  Faktor ${b}: ${fb.join(', ')}`);
+ text('level',`${idx+1}/10`);got=new Set();complete=false;door.x=1490;
+ const candidates=[...good];const wrong=[...new Set([...fa,...fb].filter(n=>!good.includes(n)))].sort(()=>Math.random()-.5);
+ while(candidates.length<7&&wrong.length)candidates.push(wrong.pop());
+ while(candidates.length<7)candidates.push(a+b+candidates.length);
+ candidates.sort(()=>Math.random()-.5);
+ // Jarak kristal sengaja dijarakkan supaya pemain ada ruang untuk mengelak kristal merah.
+ const spots=[{x:190,y:345},{x:380,y:295},{x:570,y:245},{x:760,y:300},{x:950,y:175},{x:1140,y:240},{x:1320,y:295}];
+ items=candidates.map((n,i)=>({n,x:spots[i].x,y:spots[i].y,good:good.includes(n),collected:false}));
+ player={x:45,y:320,w:30,h:38,vx:0,vy:0,onGround:false};camera=0;
+ text('score',score);text('lives',lives);document.getElementById('next').disabled=true;document.getElementById('gameover').classList.remove('show');document.getElementById('victory').classList.remove('show');gameOver=false;draw();
+}
+function setGameplayControlsDisabled(disabled){
+ ['left','right','jump','start','next','reset'].forEach(id=>{document.getElementById(id).disabled=disabled;});
+}
+function start(){if(running||gameOver)return;running=true;document.getElementById('start').disabled=true;say('Misi bermula! Semua kristal sama warna—baca nombor dan kutip faktor sepunya.');requestAnimationFrame(loop)}
+function reset(){
+ running=false;idx=0;score=0;lives=3;gameOver=false;complete=false;keys={};
+ document.getElementById('gameover').classList.remove('show');
+ document.getElementById('victory').classList.remove('show');
+ setGameplayControlsDisabled(false);
+ document.getElementById('start').disabled=false;
+ document.getElementById('next').disabled=true;
+ setup();say('Permainan direset. Tekan Mula untuk bermain.');
+}
+function jump(){if(running&&player.onGround){player.vy=-12;player.onGround=false}}
+function move(dir){if(running)player.vx=dir*4.2}
+function stopMove(){player.vx=0}
+function hit(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function loop(){if(!running){draw();return}update();draw();if(running)requestAnimationFrame(loop)}
+function update(){
+ player.vx=(keys.left?-4.2:0)+(keys.right?4.2:0);
+ if(keys.jump&&player.onGround){player.vy=-12;player.onGround=false;keys.jump=false}
+ player.x=Math.max(0,Math.min(worldW-player.w,player.x+player.vx));player.vy+=.55;let oldY=player.y;player.y+=player.vy;player.onGround=false;
+ for(const p of platforms){if(player.x+player.w>p.x&&player.x<p.x+p.w&&oldY+player.h<=p.y&&player.y+player.h>=p.y&&player.vy>=0){player.y=p.y-player.h;player.vy=0;player.onGround=true}}
+ if(player.y>canvas.height+40){loseLife('Aduh, jatuh! Cuba lagi.');if(gameOver)return}
+ for(const it of items){if(!it.collected&&hit(player,{x:it.x-13,y:it.y-13,w:26,h:26})){it.collected=true;if(it.good){score+=100;say(`Bagus! ${it.n} ialah faktor sepunya. +100 mata.`)}else{lives--;say(`${it.n} bukan faktor sepunya. Nyawa berkurang!`)}text('score',score);text('lives',lives);if(lives<=0){finish('Nyawa habis!');return}}}
+ if(items.filter(i=>i.good&&!i.collected).length===0){complete=true;door.x=player.x<door.x?door.x:player.x;document.getElementById('next').disabled=false;say('Hebat! Semua faktor sepunya dikutip. Pergi ke pintu emas di hujung kanan!')}
+ if(complete&&hit(player,door)){running=false;document.getElementById('start').disabled=false;if(idx===rounds.length-1){finish('TAHNIAH! Kau telah tamatkan semua 10 misi!',true)}else say('Misi selesai! Tekan “Misi seterusnya” untuk sambung.')}
+ camera=Math.max(0,Math.min(worldW-canvas.width,player.x-canvas.width*.34));
+}
+function loseLife(msg){lives--;text('lives',lives);player.x=45;player.y=320;player.vy=0;if(lives<=0){finish('Game over!');return}say(msg)}
+function finish(msg,didWin=false){
+ running=false;
+ keys={};
+ const startBtn=document.getElementById('start');
+ const nextBtn=document.getElementById('next');
+ const resetBtn=document.getElementById('reset');
+ nextBtn.disabled=true;
+ // Loss and victory have explicit end states. In either state, restart is the only enabled game action.
+ const lost = !didWin && (lives <= 0 || /game\s*over|nyawa\s*habis/i.test(String(msg)));
+ if(lost){
+   gameOver=true;
+   complete=false;
+   text('finalScore',score);
+   setGameplayControlsDisabled(true);
+   document.getElementById('victory').classList.remove('show');
+   document.getElementById('gameover').classList.add('show');
+   say('GAME OVER, NYAWA ANDA TELAH HABIS, SILA CUBA SEMULA!');
+   draw();
+ }else if(didWin){
+   gameOver=false;
+   complete=true;
+   text('victoryScore',score);
+   text('victoryMessage','ANDA BERJAYA MENAMATKAN SEMUA 10 MISI FAKTOR SEPUNYA!');
+   setGameplayControlsDisabled(true);
+   document.getElementById('gameover').classList.remove('show');
+   document.getElementById('victory').classList.add('show');
+   say('TAHNIAH, ANDA BERJAYA MENAMATKAN SEMUA 10 MISI FAKTOR SEPUNYA!');
+   draw();
+ }else{
+   gameOver=false;
+   startBtn.disabled=false;
+   resetBtn.disabled=false;
+   say(`${msg} Skor: ${score}.`);
+ }
+}
+function draw(){
+ const g=ctx;g.clearRect(0,0,canvas.width,canvas.height);
+ // sky and distant hills
+ let sky=g.createLinearGradient(0,0,0,440);sky.addColorStop(0,'#54c7fa');sky.addColorStop(1,'#d7f6ff');g.fillStyle=sky;g.fillRect(0,0,960,440);
+ g.fillStyle='#fff';[[90,70],[400,95],[760,55]].forEach(([x,y])=>{g.beginPath();g.arc(x-(camera*.15)%1100,y,20,0,7);g.arc(x+23-(camera*.15)%1100,y-8,25,0,7);g.arc(x+47-(camera*.15)%1100,y,18,0,7);g.fill()});
+ g.fillStyle='#69ce68';for(let i=0;i<7;i++){g.beginPath();g.ellipse(i*250-camera*.25,410,180,85,0,0,7);g.fill()}
+ g.save();g.translate(-camera,0);
+ // platforms
+ platforms.forEach(p=>{g.fillStyle='#a65c2c';g.fillRect(p.x,p.y,p.w,p.h);g.fillStyle='#52c74f';g.fillRect(p.x,p.y,p.w,8);g.fillStyle='#d0f47a';for(let x=p.x+8;x<p.x+p.w;x+=24)g.fillRect(x,p.y+1,10,3)});
+ // All number crystals intentionally use the exact same color, outline, and appearance.
+ items.forEach(it=>{if(it.collected)return;g.save();g.translate(it.x,it.y);g.shadowColor='#075e26';g.shadowBlur=10;g.fillStyle='#16a34a';g.beginPath();g.arc(0,0,21,0,Math.PI*2);g.fill();g.shadowBlur=0;g.lineWidth=4;g.strokeStyle='#d9ffd9';g.stroke();g.fillStyle='#ffffff';g.font='bold 17px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(String(it.n),0,1);g.restore();});
+ // exit door
+ g.fillStyle='#8d4c20';g.fillRect(door.x,door.y,door.w,door.h);g.fillStyle=complete?'#ffdc38':'#b5c6d3';g.fillRect(door.x+7,door.y+7,door.w-14,door.h-7);g.fillStyle='#7b491b';g.beginPath();g.arc(door.x+door.w/2,door.y+13,10,Math.PI,0);g.fill();g.fillStyle='#f8bb27';g.beginPath();g.arc(door.x+door.w-13,door.y+38,3,0,7);g.fill();
+ // original pixel explorer (not Mario character)
+ const x=player.x,y=player.y;g.fillStyle='#6b3d24';g.fillRect(x+5,y,21,8);g.fillStyle='#ffcf9c';g.fillRect(x+6,y+8,20,13);g.fillStyle='#e74a42';g.fillRect(x+2,y+5,27,7);g.fillStyle='#183b67';g.fillRect(x+5,y+21,22,12);g.fillStyle='#f0c52c';g.fillRect(x+5,y+33,8,5);g.fillRect(x+20,y+33,8,5);g.fillStyle='#14253b';g.fillRect(x+19,y+12,3,3);g.fillStyle='#fff';g.fillRect(x+8,y+12,5,4);
+ g.restore();
+ // overlay
+ g.fillStyle='rgba(17,45,73,.8)';g.fillRect(12,12,240,34);g.fillStyle='#fff';g.font='bold 15px system-ui';g.textAlign='left';g.fillText('SEMUA KRISTAL SAMA WARNA — BACA NOMBOR',22,34);
+ if(!running){g.fillStyle='rgba(10,32,55,.42)';g.fillRect(0,0,960,440);g.fillStyle='#fff';g.textAlign='center';g.font='bold 32px system-ui';g.fillText(complete?'MISI SELESAI!':'LOMPAT & KUTIP!',480,190);g.font='bold 18px system-ui';g.fillText(complete?'Pergi ke pintu emas!':'Tekan butang Mula untuk bermain',480,225)}
+}
+document.getElementById('start').onclick=start;document.getElementById('reset').onclick=reset;document.getElementById('restartGame').onclick=reset;document.getElementById('restartWin').onclick=reset;
+document.getElementById('next').onclick=()=>{if(gameOver||!complete)return;if(idx<rounds.length-1){idx++;setup();running=true;document.getElementById('start').disabled=true;say('Misi baharu! Semua kristal sama warna—cari faktor sepunya.');requestAnimationFrame(loop)}else finish('TAHNIAH! Semua 10 misi telah selesai!',true)};
+document.getElementById('left').onpointerdown=()=>{if(!gameOver)keys.left=true};document.getElementById('left').onpointerup=()=>keys.left=false;document.getElementById('left').onpointerleave=()=>keys.left=false;
+document.getElementById('right').onpointerdown=()=>{if(!gameOver)keys.right=true};document.getElementById('right').onpointerup=()=>keys.right=false;document.getElementById('right').onpointerleave=()=>keys.right=false;
+document.getElementById('jump').onpointerdown=()=>{if(!gameOver)keys.jump=true};
+document.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp',' '].includes(e.key))e.preventDefault();if(gameOver)return;if(e.key==='ArrowLeft')keys.left=true;if(e.key==='ArrowRight')keys.right=true;if(e.key==='ArrowUp'||e.key===' ')keys.jump=true});
+document.addEventListener('keyup',e=>{if(e.key==='ArrowLeft')keys.left=false;if(e.key==='ArrowRight')keys.right=false;if(e.key==='ArrowUp'||e.key===' ')keys.jump=false});
+setup();
+</script></body></html>
